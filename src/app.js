@@ -17,7 +17,11 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 import userRouter from "./routes/user.routes.js";
+import bookingsRouter from "./routes/bookings.routes.js"
+import cabinsRouter from "./routes/cabins.routes.js"
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/users",bookingsRouter);
+app.use("/api/v1/users", cabinsRouter);
 
 export { app };
