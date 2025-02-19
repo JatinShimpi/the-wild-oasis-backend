@@ -14,16 +14,20 @@ import {
 
 const router = Router();
 
-router.route("/register").post(upload.fields([{ name: "avatar", maxCount: 1 }]), registerUser);
-router.route("/login").post(loginUser);
+router
+  .route("/register")
+  .post(upload.fields([{ name: "avatar", maxCount: 1 }]), registerUser); //tested ok
+router.route("/login").post(loginUser); // tested ok
 
 //securedRoutes
-router.route("/logout").post(verifyJWT, logoutUser);
-router.route("/refresh-token").post(refreshAccessToken);
-router.route("/change-password").post(verifyJWT, changeCurrentUserPassword);
-router.route("/current-user").get(verifyJWT, getCurrentUSer);
-router.route("/update-account").patch(verifyJWT, updateAccounddetails);
+router.route("/logout").post(verifyJWT, logoutUser); // tested ok
+router.route("/refresh-token").post(refreshAccessToken); // tested ok
+router.route("/change-password").post(verifyJWT, changeCurrentUserPassword); //tested ok
+router.route("/current-user").get(verifyJWT, getCurrentUSer); // tested ok
+router.route("/update-account").patch(verifyJWT, updateAccounddetails); // tested ok
 
-router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+router
+  .route("/avatar")
+  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar); //tested ok
 
 export default router;

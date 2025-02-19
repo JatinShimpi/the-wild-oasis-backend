@@ -35,7 +35,7 @@ const deleteFromCloudinary = async (publicId) => {
       return null;
     }
     const response = await cloudinary.uploader.destroy(publicId, {
-      resource_type: "auto",
+      resource_type: "image",
     });
 
     if (response.result === "ok") {
@@ -52,16 +52,3 @@ const deleteFromCloudinary = async (publicId) => {
 };
 
 export { uploadOnCloudinary, deleteFromCloudinary };
-
-const uploadResult = await cloudinary.uploader
-  .upload(
-    "https://res.cloudinary.com/demo/image/upload/getting-started/shoes.jpg",
-    {
-      public_id: "shoes",
-    },
-  )
-  .catch((error) => {
-    console.log(error);
-  });
-
-console.log(uploadResult);
