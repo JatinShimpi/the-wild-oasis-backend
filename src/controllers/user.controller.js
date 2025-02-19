@@ -2,7 +2,11 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import jwt from "jsonwebtoken";
+import jwt, { decode } from "jsonwebtoken";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -23,7 +27,9 @@ const generateAccessAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
+  //tested:ok
   const { fullName, email, username, password } = req.body;
+
   console.log(fullName, email, username);
 
   if (
@@ -74,6 +80,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
+  //tested:ok
   // req data -> body
   const { email, password } = req.body;
 
@@ -164,7 +171,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.ACCESS_TOKEN_SECRET,
+      process.env.REFRESH_TOKEN_SECRET,
     );
 
     const user = await User.findById(decodedToken?._id);
@@ -177,13 +184,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "refresh token is expired or used");
     }
 
+    const { accessToken, newrefreshToken } =
+      await generateAccessAndRefreshToken(user._id);
+
+    user.refreshToken = newrefreshToken;
+    await user.save();
+
     const options = {
       httpOnly: true,
       secure: true,
     };
-
-    const { accessToken, newrefreshToken } =
-      await generateAccessAndRefreshToken(user._id);
 
     return res
       .status(200)
