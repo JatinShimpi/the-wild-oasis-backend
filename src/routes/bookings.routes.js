@@ -4,7 +4,7 @@ import { checkinBooking, createBooking, deleteBooking, getAllBookings } from "..
 
 const router = Router();
 
-router.route("/createbooking").get(verifyJWT, createBooking);
+router.route("/createbooking").get(verifyJWT, createBooking); // only to be used in client website
 router.route("/getbookings").get(verifyJWT, getAllBookings);
 router.route("/checkinbooking").post(verifyJWT, checkinBooking)
 router.route("/deletebooking").delete(verifyJWT, deleteBooking)

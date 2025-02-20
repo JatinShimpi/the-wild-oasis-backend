@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 
 const cabinsSchema = mongoose.Schema(
     {
+        cabinNum:{
+            type:Number,
+            required:true
+        },
         cabinImage:{
             type:String,
             required:true

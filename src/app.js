@@ -21,7 +21,7 @@ import bookingsRouter from "./routes/bookings.routes.js"
 import cabinsRouter from "./routes/cabins.routes.js"
 
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/users",bookingsRouter);
-app.use("/api/v1/users", cabinsRouter);
+app.use("/api/v1/bookings",bookingsRouter);
+app.use("/api/v1/cabins", cabinsRouter);
 
 export { app };
