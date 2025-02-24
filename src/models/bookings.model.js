@@ -32,10 +32,10 @@ const bookingsSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    totalPrice: {
-      type: Number,
-      required: true,
-    },
+    // totalPrice: {
+    //   type: Number,
+    //   required: true,
+    // },
     status: {
       type: String,
       required: true,
@@ -53,7 +53,7 @@ const bookingsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    cabinId: {
+    cabinNum: {
       type: Number,
       required: true,
     },
@@ -62,6 +62,10 @@ const bookingsSchema = new mongoose.Schema(
       ref: "Guest",
       required: true,
     },
+    countryFlag:{
+      type:String,
+      required:true
+    }
   },
   {
     timestamps: true,

@@ -1,61 +1,117 @@
 import { Bookings } from "../models/bookings.model.js";
+import { Guest } from "../models/guest.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-const createBooking = asyncHandler(async (req, res) => {
-  const {
-    fullName,
-    email,
-    nationality,
-    nationalID,
-    countryFlag,
-    startDate,
-    endDate,
-    numNights,
-    numGuests,
-    cabinPrice,
-    extrasPrice,
-    totalPrice,
-    status,
-    hasBreakfast,
-    isPaid,
-    observations,
-    cabinId,
-  } = req.body;
+const createBooking = asyncHandler(async (req, res, next) => {
+  try {
+    const {
+      fullName,
+      email,
+      // nationality,
+      nationalID,
+      countryFlag,
+      startDate,
+      endDate,
+      numNights,
+      numGuests,
+      cabinPrice,
+      extrasPrice,
+      // totalPrice,
+      status,
+      hasBreakfast,
+      isPaid,
+      observations,
+      cabinNum,
+    } = req.body;
 
-  // Create a new guest
-  const newGuest = await Guest.create({
-    fullName,
-    email,
-    nationality,
-    nationalID,
-    countryFlag,
-  });
+    // Check for missing fields
+    if (
+      [
+        fullName,
+        email,
+        // nationality,
+        nationalID,
+        countryFlag,
+        startDate,
+        endDate,
+        numNights,
+        numGuests,
+        cabinPrice,
+        extrasPrice,
+        // totalPrice,
+        status,
+        hasBreakfast,
+        isPaid,
+        observations,
+        cabinNum,
+      ].some((field) => field === undefined || field === "" || field === null)
+    ) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, null, "All fields are required"));
+    }
 
-  // Create the booking with the guest's ObjectId
-  const newBooking = await Bookings.create({
-    startDate,
-    endDate,
-    numNights,
-    numGuests,
-    cabinPrice,
-    extrasPrice,
-    totalPrice,
-    status,
-    hasBreakfast,
-    isPaid,
-    observations,
-    cabinId,
-    guestId: newGuest._id, // Reference to the created guest
-  });
+    // Check if guest already exists
+    const existingGuest = await Guest.findOne({ email, nationalID });
+    let guestId;
 
-  res.status(201).json({
-    success: true,
-    message: "Booking created successfully",
-    data: newBooking,
-  });
+    if (existingGuest) {
+      guestId = existingGuest._id;
+    } else {
+      // Create a new guest if not found
+      const newGuest = await Guest.create({
+        fullName,
+        email,
+        nationalID,
+        countryFlag,
+      });
+      guestId = newGuest._id;
+    }
+
+    // Check if the cabin is available
+    const existingBooking = await Bookings.findOne({
+      cabinNum,
+      startDate: { $lte: endDate },
+      endDate: { $gte: startDate },
+    });
+    if (existingBooking) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Cabin is already booked for the selected dates",
+          ),
+        );
+    }
+
+    // Create the booking
+    const newBooking = await Bookings.create({
+      startDate,
+      endDate,
+      numNights,
+      numGuests,
+      cabinPrice,
+      extrasPrice,
+      // totalPrice,
+      status,
+      hasBreakfast,
+      isPaid,
+      observations,
+      cabinNum,
+      guestId,
+    });
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newBooking, "Booking created successfully"));
+  } catch (error) {
+    throw new ApiError(500, "error while creating new Booking"); // Pass error to the global error handler
+  }
 });
-
 
 const getAllBookings = asyncHandler(async (req, res) => {
   try {

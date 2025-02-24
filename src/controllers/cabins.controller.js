@@ -1,10 +1,15 @@
 import { Cabin } from "../models/cabins.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const createCabin = asyncHandler(async (req, res) => {
   const { cabinNum, capacity, price, discount, description } = req.body;
+
+  console.log(cabinNum, capacity, price, discount, description);
 
   if (!cabinNum || !capacity || !price || !description) {
     throw new ApiError(400, "All required fields must be filled");
@@ -64,6 +69,7 @@ const getCabinById = asyncHandler(async (req, res) => {
 });
 
 const updateCabin = asyncHandler(async (req, res) => {
+  
   let updateData = { ...req.body };
 
   // Handle image upload if a new file is provided
@@ -112,7 +118,6 @@ const updateCabin = asyncHandler(async (req, res) => {
     data: updatedCabin,
   });
 });
-
 
 const deleteCabin = asyncHandler(async (req, res) => {
   const deletedCabin = await Cabin.findByIdAndDelete(req.params.id);

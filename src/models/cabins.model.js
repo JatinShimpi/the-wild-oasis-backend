@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const cabinsSchema = mongoose.Schema(
     {
         cabinNum:{
-            type:Number,
+            type:String,
             required:true
         },
         cabinImage:{
@@ -11,15 +11,15 @@ const cabinsSchema = mongoose.Schema(
             required:true
         },
         capacity:{
-            type:Number,
+            type:String,
             required:true,
         },
         price:{
-            type:Number,
+            type:String,
             required:true,
         },
         discount:{
-            type:Number,
+            type:String,
         },
         description:{
             type:String,
