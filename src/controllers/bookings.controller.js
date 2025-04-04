@@ -115,20 +115,86 @@ const createBooking = asyncHandler(async (req, res, next) => {
 
 const getAllBookings = asyncHandler(async (req, res) => {
   try {
-    const bookings = await Bookings.find().populate("guestId");
+    const { filter, sortBy, page = 1, pageSize = 10, date, activity } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    // Date filtering
+    if (date) {
+      query.createdAt = { $gte: new Date(date) };
+    }
+    
+    // Activity filter (today's checkins/checkouts)
+    if (activity === "today") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      query.$or = [
+        { startDate: { $lte: today, $gte: today } },
+        { status: { $in: ["checked-in", "checked-out"] } }
+      ];
+    }
 
-    const totalBookings = Bookings.countDocuments();
+    // Sorting
+    const sortOptions = sortBy ? JSON.parse(sortBy) : { createdAt: -1 };
+    
+    // Pagination
+    const skip = (page - 1) * pageSize;
+    
+    const [bookings, total] = await Promise.all([
+      Bookings.find(query)
+        .populate("guestId")
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(pageSize),
+      Bookings.countDocuments(query)
+    ]);
 
     return res.status(200).json({
       success: true,
-      total: totalBookings,
+      total,
       data: bookings,
     });
+    
   } catch (error) {
-    return res
-      .status(500)
-      .json(new ApiError(500, "error while fetching the bookings"));
+    return res.status(500).json(
+      new ApiError(500, error?.message || "Error fetching bookings")
+    );
   }
+});
+
+// Add these new controller methods
+const getBookingsAfterDate = asyncHandler(async (req, res) => {
+  const { date } = req.query;
+  const bookings = await Bookings.find({ 
+    createdAt: { $gte: new Date(date) }
+  }).populate("guestId");
+  
+  res.status(200).json(new ApiResponse(200, bookings));
+});
+
+const getStaysAfterDate = asyncHandler(async (req, res) => {
+  const { date } = req.query;
+  const stays = await Bookings.find({
+    startDate: { $gte: new Date(date) },
+    status: { $in: ["confirmed", "checked-in"] }
+  }).populate("guestId");
+  
+  res.status(200).json(new ApiResponse(200, stays));
+});
+
+const getStaysTodayActivity = asyncHandler(async (req, res) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const activities = await Bookings.find({
+    $or: [
+      { startDate: today, status: "confirmed" },
+      { endDate: today, status: "checked-in" }
+    ]
+  }).populate("guestId");
+  
+  res.status(200).json(new ApiResponse(200, activities));
 });
 
 const checkinBooking = asyncHandler(async (req, res) => {
@@ -176,4 +242,12 @@ const deleteBooking = asyncHandler(async (req, res) => {
   });
 });
 
-export { getAllBookings, checkinBooking, deleteBooking, createBooking };
+export {
+  getAllBookings,
+  checkinBooking,
+  deleteBooking,
+  createBooking,
+  getBookingsAfterDate,
+  getStaysAfterDate,
+  getStaysTodayActivity,
+};

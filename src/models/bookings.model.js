@@ -32,14 +32,15 @@ const bookingsSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    // totalPrice: {
-    //   type: Number,
-    //   required: true,
-    // },
+    totalPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
     status: {
       type: String,
       required: true,
-      enum: ["unconfirmed", "confirmed", "cancelled"], // adjust enum values as needed
+      enum: ["unconfirmed", "confirmed", "checked-in", "checked-out", "cancelled"],
     },
     hasBreakfast: {
       type: Boolean,

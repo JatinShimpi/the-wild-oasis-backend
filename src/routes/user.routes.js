@@ -17,6 +17,7 @@ const router = Router();
 router
   .route("/register")
   .post(upload.fields([{ name: "avatar", maxCount: 1 }]), registerUser); //tested ok
+
 router.route("/login").post(loginUser); // tested ok
 
 //securedRoutes
