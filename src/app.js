@@ -1,30 +1,37 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+
 import helmet from "helmet";
+import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
-import morgan from "morgan";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpecs } from "./swagger.js";
 
 const app = express();
 
-// 1) Global Middlewares
-
-// Set security HTTP headers
+// Security HTTP Headers
 app.use(helmet());
 
 // Development logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 }
 
-// Limit requests from same API
+// Rate limiting
 const limiter = rateLimit({
-  max: 100,
-  windowMs: 15 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour!"
+  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: 60 * 60 * 1000, // 1 hour
+  message: "Too many requests from this IP, please try again in an hour!",
 });
 app.use("/api", limiter);
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // CORS configuration for both frontends
 app.use(
@@ -39,14 +46,10 @@ app.use(
   })
 );
 
-// Body parser, reading data from body into req.body
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
-
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
 
 // Import routes
 import userRouter from "./routes/user.routes.js";

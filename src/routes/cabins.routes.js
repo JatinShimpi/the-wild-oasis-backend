@@ -1,46 +1,27 @@
 import { Router } from "express";
-import {
-  getAllCabins,
-  getCabinById,
-  createCabin,
-  updateCabin,
-  deleteCabin,
-  getCabinPrice,
-  getBookedDatesByCabinId,
-} from "../controllers/cabins.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { validate } from "../middlewares/validate.middleware.js";
 import {
-  createCabinSchema,
-  updateCabinSchema,
-} from "../validators/common.validator.js";
+  createCabin,
+  getAllCabins,
+  getCabinById,
+  getCabinPrice,
+  getBookedDatesByCabinId,
+  updateCabin,
+  deleteCabin,
+} from "../controllers/cabins.controller.js";
 
 const router = Router();
 
-// Public routes
-router.get("/", getAllCabins);
-router.get("/:id", getCabinById);
-router.get("/:id/price", getCabinPrice);
-router.get("/:id/booked-dates", getBookedDatesByCabinId);
+// Public routes (cabin info available to guests)
+router.route("/").get(getAllCabins);
+router.route("/:id").get(getCabinById);
+router.route("/:id/price").get(getCabinPrice);
+router.route("/:id/booked-dates").get(getBookedDatesByCabinId);
 
-// Protected routes (Create, Update, Delete)
-router.use(verifyJWT);
-
-router.post(
-  "/",
-  upload.fields([{ name: "image", maxCount: 1 }]),
-  validate(createCabinSchema),
-  createCabin
-);
-
-router.patch(
-  "/:id",
-  upload.single("image"),
-  validate(updateCabinSchema),
-  updateCabin
-);
-
-router.delete("/:id", deleteCabin);
+// Protected routes (admin only)
+router.route("/").post(verifyJWT, upload.fields([{ name: "image", maxCount: 1 }]), createCabin);
+router.route("/:id").patch(verifyJWT, upload.single("image"), updateCabin);
+router.route("/:id").delete(verifyJWT, deleteCabin);
 
 export default router;
