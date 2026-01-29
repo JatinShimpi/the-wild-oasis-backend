@@ -1,34 +1,35 @@
 import mongoose from "mongoose";
 
 const cabinsSchema = mongoose.Schema(
-    {
-        cabinNum:{
-            type:String,
-            required:true
-        },
-        cabinImage:{
-            type:String,
-            required:true
-        },
-        capacity:{
-            type:String,
-            required:true,
-        },
-        price:{
-            type:String,
-            required:true,
-        },
-        discount:{
-            type:String,
-        },
-        description:{
-            type:String,
-            required:true,
-        }
+  {
+    name: {
+      type: String,
+      required: true,
     },
-    {
-        timestamps:true
-    }
-)
+    maxCapacity: {
+      type: Number,
+      required: true,
+    },
+    regularPrice: {
+      type: Number,
+      required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-export const Cabin = mongoose.model("Cabin",cabinsSchema)
+export const Cabin = mongoose.model("Cabin", cabinsSchema);

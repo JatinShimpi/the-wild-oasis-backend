@@ -1,58 +1,50 @@
 import { Cabin } from "../models/cabins.model.js";
+import { Bookings } from "../models/bookings.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   deleteFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
+import { eachDayOfInterval } from "date-fns";
 
 const createCabin = asyncHandler(async (req, res) => {
-  const { cabinNum, capacity, price, discount, description } = req.body;
+  const { name, maxCapacity, regularPrice, discount, description } = req.body;
 
-  console.log(cabinNum, capacity, price, discount, description);
-
-  if (!cabinNum || !capacity || !price || !description) {
+  if (!name || !maxCapacity || !regularPrice || !description) {
     throw new ApiError(400, "All required fields must be filled");
   }
 
-  const existedCabin = await Cabin.findOne({ $or: [{ cabinNum }] });
+  const existedCabin = await Cabin.findOne({ name });
   if (existedCabin) {
-    throw new ApiError(409, "cabin already exits");
+    throw new ApiError(409, "Cabin with this name already exists");
   }
 
-  const cabinLocalPath = req.files?.cabinImage[0]?.path;
+  const cabinLocalPath = req.files?.image?.[0]?.path;
 
   if (!cabinLocalPath) {
-    throw new ApiError(400, "cabin file is required");
+    throw new ApiError(400, "Cabin image is required");
   }
-  console.log(req.files);
 
-  const cabin = await uploadOnCloudinary(cabinLocalPath);
+  const cabinImage = await uploadOnCloudinary(cabinLocalPath);
 
   const newCabin = await Cabin.create({
-    cabinImage: cabin.url,
-    cabinNum,
-    capacity,
-    price,
-    discount,
+    name,
+    maxCapacity: Number(maxCapacity),
+    regularPrice: Number(regularPrice),
+    discount: Number(discount) || 0,
     description,
+    image: cabinImage.url,
   });
 
-  res.status(201).json({
-    success: true,
-    message: "Cabin created successfully",
-    data: newCabin,
-  });
+  res.status(201).json(new ApiResponse(201, newCabin, "Cabin created successfully"));
 });
 
 const getAllCabins = asyncHandler(async (req, res) => {
-  const cabins = await Cabin.find();
+  const cabins = await Cabin.find().sort({ name: 1 });
 
-  res.status(200).json({
-    success: true,
-    total: cabins.length,
-    data: cabins,
-  });
+  res.status(200).json(new ApiResponse(200, cabins, "Cabins fetched successfully"));
 });
 
 const getCabinById = asyncHandler(async (req, res) => {
@@ -62,15 +54,57 @@ const getCabinById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Cabin not found");
   }
 
-  res.status(200).json({
-    success: true,
-    data: cabin,
+  res.status(200).json(new ApiResponse(200, cabin, "Cabin fetched successfully"));
+});
+
+const getCabinPrice = asyncHandler(async (req, res) => {
+  const cabin = await Cabin.findById(req.params.id).select("regularPrice discount");
+
+  if (!cabin) {
+    throw new ApiError(404, "Cabin not found");
+  }
+
+  res.status(200).json(new ApiResponse(200, cabin, "Cabin price fetched successfully"));
+});
+
+const getBookedDatesByCabinId = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  // Get all bookings for this cabin that are current or future
+  const bookings = await Bookings.find({
+    cabinId: id,
+    $or: [
+      { startDate: { $gte: today } },
+      { status: "checked-in" }
+    ]
   });
+
+  // Convert to array of all booked dates
+  const bookedDates = bookings
+    .map((booking) => {
+      return eachDayOfInterval({
+        start: new Date(booking.startDate),
+        end: new Date(booking.endDate),
+      });
+    })
+    .flat();
+
+  res.status(200).json(new ApiResponse(200, bookedDates, "Booked dates fetched successfully"));
 });
 
 const updateCabin = asyncHandler(async (req, res) => {
-  
-  let updateData = { ...req.body };
+  const { name, maxCapacity, regularPrice, discount, description } = req.body;
+
+  let updateData = {};
+
+  if (name) updateData.name = name;
+  if (maxCapacity) updateData.maxCapacity = Number(maxCapacity);
+  if (regularPrice) updateData.regularPrice = Number(regularPrice);
+  if (discount !== undefined) updateData.discount = Number(discount);
+  if (description) updateData.description = description;
 
   // Handle image upload if a new file is provided
   if (req.file?.path) {
@@ -87,49 +121,55 @@ const updateCabin = asyncHandler(async (req, res) => {
     }
 
     // Delete old image if it exists
-    if (existingCabin.cabinImage) {
-      const publicId = existingCabin.cabinImage.split("/").pop().split(".")[0];
+    if (existingCabin.image) {
+      const publicId = existingCabin.image.split("/").pop().split(".")[0];
       await deleteFromCloudinary(publicId);
     }
 
-    // Add new image URL to update data
-    updateData.cabinImage = cabinImage.url;
+    updateData.image = cabinImage.url;
   }
 
-  // Ensure there is at least one field to update
   if (Object.keys(updateData).length === 0) {
     throw new ApiError(400, "At least one field must be updated");
   }
 
-  // Update the cabin details
   const updatedCabin = await Cabin.findByIdAndUpdate(
     req.params.id,
     { $set: updateData },
-    { new: true },
+    { new: true }
   );
 
   if (!updatedCabin) {
     throw new ApiError(404, "Cabin not found");
   }
 
-  res.status(200).json({
-    success: true,
-    message: "Cabin updated successfully",
-    data: updatedCabin,
-  });
+  res.status(200).json(new ApiResponse(200, updatedCabin, "Cabin updated successfully"));
 });
 
 const deleteCabin = asyncHandler(async (req, res) => {
-  const deletedCabin = await Cabin.findByIdAndDelete(req.params.id);
+  const cabin = await Cabin.findById(req.params.id);
 
-  if (!deletedCabin) {
+  if (!cabin) {
     throw new ApiError(404, "Cabin not found");
   }
 
-  res.status(200).json({
-    success: true,
-    message: "Cabin deleted successfully",
-  });
+  // Delete image from Cloudinary
+  if (cabin.image) {
+    const publicId = cabin.image.split("/").pop().split(".")[0];
+    await deleteFromCloudinary(publicId);
+  }
+
+  await Cabin.findByIdAndDelete(req.params.id);
+
+  res.status(200).json(new ApiResponse(200, null, "Cabin deleted successfully"));
 });
 
-export { createCabin, getAllCabins, getCabinById, updateCabin, deleteCabin };
+export {
+  createCabin,
+  getAllCabins,
+  getCabinById,
+  getCabinPrice,
+  getBookedDatesByCabinId,
+  updateCabin,
+  deleteCabin
+};

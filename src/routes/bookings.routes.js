@@ -1,23 +1,45 @@
 import { Router } from "express";
-import { verifyJWT } from "../middleware/auth.middleware.js";
 import {
-  checkinBooking,
   createBooking,
-  deleteBooking,
   getAllBookings,
+  getBookingById,
+  updateBookingAPI,
+  deleteBookingAPI,
+  checkinBookingAPI,
+  checkoutBookingAPI,
   getBookingsAfterDate,
   getStaysAfterDate,
-  getStaysTodayActivity
+  getStaysTodayActivity,
 } from "../controllers/bookings.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import {
+  createBookingSchema,
+  updateBookingSchema,
+} from "../validators/common.validator.js";
 
 const router = Router();
 
-router.route("/create-booking").get(verifyJWT, createBooking);
-router.route("/get-bookings").get(verifyJWT, getAllBookings);
-router.route("/get-bookings-after-date").get(verifyJWT, getBookingsAfterDate);
-router.route("/get-stays-after-date").get(verifyJWT, getStaysAfterDate);
-router.route("/get-stays-today").get(verifyJWT, getStaysTodayActivity);
-router.route("/checkin-booking").post(verifyJWT, checkinBooking);
-router.route("/delete-booking").delete(verifyJWT, deleteBooking);
+// Protected routes
+router.use(verifyJWT);
+
+router.route("/").get(getAllBookings).post(validate(createBookingSchema), createBooking);
+
+router
+  .route("/:id")
+  .get(getBookingById)
+  .patch(validate(updateBookingSchema), updateBookingAPI)
+  .delete(deleteBookingAPI);
+
+router.route("/check-in/:id").patch(
+  validate(updateBookingSchema),
+  checkinBookingAPI
+);
+
+router.route("/checkout/:id").patch(checkoutBookingAPI);
+
+router.route("/after-date").get(getBookingsAfterDate);
+router.route("/stays/after-date").get(getStaysAfterDate);
+router.route("/stays/today-activity").get(getStaysTodayActivity);
 
 export default router;

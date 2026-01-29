@@ -2,10 +2,6 @@ import mongoose from "mongoose";
 
 const bookingsSchema = new mongoose.Schema(
   {
-    created_at: {
-      type: Date,
-      default: Date.now,
-    },
     startDate: {
       type: Date,
       required: true,
@@ -16,7 +12,7 @@ const bookingsSchema = new mongoose.Schema(
     },
     numNights: {
       type: Number,
-      min: 0,
+      min: 1,
       required: true,
     },
     numGuests: {
@@ -30,7 +26,7 @@ const bookingsSchema = new mongoose.Schema(
     },
     extrasPrice: {
       type: Number,
-      required: true,
+      default: 0,
     },
     totalPrice: {
       type: Number,
@@ -40,7 +36,8 @@ const bookingsSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["unconfirmed", "confirmed", "checked-in", "checked-out", "cancelled"],
+      enum: ["unconfirmed", "checked-in", "checked-out"],
+      default: "unconfirmed",
     },
     hasBreakfast: {
       type: Boolean,
@@ -54,23 +51,29 @@ const bookingsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    cabinNum: {
-      type: Number,
+    cabinId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Cabin",
       required: true,
     },
     guestId: {
-      type: mongoose.Schema.Types.ObjectId, // Reference to Guest
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Guest",
       required: true,
     },
-    countryFlag:{
-      type:String,
-      required:true
-    }
   },
   {
     timestamps: true,
-  },
+  }
 );
+
+// Virtual for created_at to match Supabase field name (frontend compatibility)
+bookingsSchema.virtual("created_at").get(function () {
+  return this.createdAt;
+});
+
+// Ensure virtuals are included in JSON output
+bookingsSchema.set("toJSON", { virtuals: true });
+bookingsSchema.set("toObject", { virtuals: true });
 
 export const Bookings = mongoose.model("Booking", bookingsSchema);

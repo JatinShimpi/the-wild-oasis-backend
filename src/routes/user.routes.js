@@ -1,34 +1,41 @@
 import { Router } from "express";
-import { upload } from "../middleware/multer.middleware.js";
-import { verifyJWT } from "../middleware/auth.middleware.js";
 import {
-  changeCurrentUserPassword,
-  getCurrentUSer,
+  registerUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
-  registerUser,
-  updateAccounddetails,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
   updateUserAvatar,
 } from "../controllers/user.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import {
+  registerSchema,
+  loginSchema,
+  changePasswordSchema,
+  updateAccountSchema,
+} from "../validators/auth.validator.js";
 
 const router = Router();
 
-router
-  .route("/register")
-  .post(upload.fields([{ name: "avatar", maxCount: 1 }]), registerUser); //tested ok
+router.route("/register").post(
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  validate(registerSchema),
+  registerUser
+);
 
-router.route("/login").post(loginUser); // tested ok
+router.route("/login").post(validate(loginSchema), loginUser);
 
-//securedRoutes
-router.route("/logout").post(verifyJWT, logoutUser); // tested ok
-router.route("/refresh-token").post(refreshAccessToken); // tested ok
-router.route("/change-password").post(verifyJWT, changeCurrentUserPassword); //tested ok
-router.route("/current-user").get(verifyJWT, getCurrentUSer); // tested ok
-router.route("/update-account").patch(verifyJWT, updateAccounddetails); // tested ok
+// Secured routes
+router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/refresh-token").post(refreshAccessToken);
+router.route("/change-password").post(verifyJWT, validate(changePasswordSchema), changeCurrentPassword);
+router.route("/current-user").get(verifyJWT, getCurrentUser);
+router.route("/update-account").patch(verifyJWT, validate(updateAccountSchema), updateAccountDetails);
 
-router
-  .route("/avatar")
-  .patch(verifyJWT, upload.single("avatar"), updateUserAvatar); //tested ok
+router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
 
 export default router;

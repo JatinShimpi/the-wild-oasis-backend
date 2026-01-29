@@ -4,8 +4,10 @@ import { getSettings, updateSettings } from "../controllers/settings.controller.
 
 const router = Router();
 
-router.route("/")
-  .get(verifyJWT, getSettings)
-  .patch(verifyJWT, updateSettings);
+// Public routes (settings needed by customer website)
+router.route("/").get(getSettings);
+
+// Protected routes (admin only)
+router.route("/").patch(verifyJWT, updateSettings);
 
 export default router;
