@@ -91,7 +91,7 @@ const createBooking = asyncHandler(async (req, res) => {
 });
 
 const getAllBookings = asyncHandler(async (req, res) => {
-  const { status, sortBy, page = 1 } = req.query;
+  const { status, sortBy, page = 1, guestId } = req.query;
 
   // Build query
   const query = {};
@@ -99,6 +99,11 @@ const getAllBookings = asyncHandler(async (req, res) => {
   // Status filter
   if (status && status !== "all") {
     query.status = status;
+  }
+
+  // Guest filter
+  if (guestId) {
+    query.guestId = guestId;
   }
 
   // Sorting
@@ -113,7 +118,7 @@ const getAllBookings = asyncHandler(async (req, res) => {
 
   const [bookings, total] = await Promise.all([
     Bookings.find(query)
-      .populate("cabinId", "name")
+      .populate("cabinId", "name image")
       .populate("guestId", "fullName email")
       .sort(sortOptions)
       .skip(skip)
@@ -125,7 +130,7 @@ const getAllBookings = asyncHandler(async (req, res) => {
   const transformedBookings = bookings.map((booking) => ({
     ...booking.toObject(),
     id: booking._id,
-    cabins: booking.cabinId ? { name: booking.cabinId.name } : null,
+    cabins: booking.cabinId ? { name: booking.cabinId.name, image: booking.cabinId.image } : null,
     guests: booking.guestId
       ? { fullName: booking.guestId.fullName, email: booking.guestId.email }
       : null,

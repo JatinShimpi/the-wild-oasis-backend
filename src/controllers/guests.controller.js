@@ -2,6 +2,149 @@ import { Guest } from "../models/guest.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import jwt from "jsonwebtoken";
+
+const generateAccessAndRefreshTokens = async (guestId) => {
+    try {
+        const guest = await Guest.findById(guestId);
+        const accessToken = guest.generateAccessToken();
+        const refreshToken = guest.generateRefreshToken();
+
+        guest.refreshToken = refreshToken;
+        await guest.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken };
+    } catch (error) {
+        throw new ApiError(
+            500,
+            "Something went wrong while generating referesh and access token"
+        );
+    }
+};
+
+const loginGoogle = asyncHandler(async (req, res) => {
+    const { fullName, email, nationality, nationalID, countryFlag } = req.body;
+
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+
+    let guest = await Guest.findOne({ email });
+
+    if (!guest) {
+        // Create new guest if not exists
+        guest = await Guest.create({
+            fullName: fullName || "Guest",
+            email,
+            nationality: nationality || "",
+            nationalID: nationalID || "",
+            countryFlag: countryFlag || "",
+        });
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+        guest._id
+    );
+
+    const loggedInGuest = await Guest.findById(guest._id).select("-refreshToken");
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Check NODE_ENV
+    };
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    guest: loggedInGuest,
+                    accessToken,
+                    refreshToken,
+                },
+                "Guest logged in Successfully"
+            )
+        );
+});
+
+const logoutGuest = asyncHandler(async (req, res) => {
+    await Guest.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1, // this removes the field from document
+            },
+        },
+        {
+            new: true,
+        }
+    );
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+    };
+
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "Guest logged Out"));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+
+        const guest = await Guest.findById(decodedToken?._id);
+
+        if (!guest) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+
+        if (incomingRefreshToken !== guest?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or used");
+        }
+
+        const { accessToken, newRefreshToken } =
+            await generateAccessAndRefreshTokens(guest._id);
+
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+        };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    { accessToken, refreshToken: newRefreshToken },
+                    "Access token refreshed"
+                )
+            );
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token");
+    }
+});
+
+// Keep existing CRUD but remove createGuest since loginGoogle handles creation
+// actually keep createGuest for manual testing if needed, but loginGoogle is primary.
 
 const createGuest = asyncHandler(async (req, res) => {
     const { fullName, email, nationality, nationalID, countryFlag } = req.body;
@@ -102,4 +245,7 @@ export {
     getAllGuests,
     updateGuest,
     deleteGuest,
+    loginGoogle,
+    logoutGuest,
+    refreshAccessToken,
 };
