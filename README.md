@@ -27,30 +27,30 @@ Originally built using **Supabase** (Backend-as-a-Service), this repository repl
 *   **Authentication**: JWT (Access + Refresh Tokens) + Google OAuth (via Frontend)
 *   **File Storage**: [Cloudinary](https://cloudinary.com/) (via Multer)
 *   **Documentation**: [Swagger / OpenAPI](https://swagger.io/) (available at `/api-docs`)
-*   **Deployment**: [Koyeb](https://www.koyeb.com/) / [Render](https://render.com/)
+*   **Deployment**:  [Render](https://render.com/)
 
 ---
 
 ## ✨ Features
 
-### 🔐 Advanced Authentication & Authorization
+### Advanced Authentication & Authorization
 *   **Dual-Role Support**: Separate authentication flows for Internal Staff (Admin) and Website Guests.
 *   **JWT Implementation**: robust logic with short-lived Access Tokens and rotating Refresh Tokens stored in secure HTTP-only cookies.
 *   **Social Login**: Integration with Google OAuth flows for guest users.
 
-### 🏨 Hotel Management Core
+### Hotel Management Core
 *   **Cabins API**: CRUD operations for managing hotel cabins, including image uploads and capacity management.
 *   **Bookings API**: Complex booking logic to handle dates, overlap checking, pricing calculation, and status updates (Checked-In/Out).
 *   **Settings API**: Global hotel settings management (min/max booking length, breakfast price).
 
-### 🛡️ Security & Performance
+### Security & Performance
 *   **Rate Limiting**: Protection against brute-force and DDoS attacks.
 *   **Data Sanitization**: querying injection protection (NoSQL Injection).
 *   **Error Handling**: Global error handling middleware for consistent responses.
 
 ---
 
-## 🧭 API Documentation
+## API Documentation
 
 Full API documentation is available via **Swagger UI** when running the server locally or in production.
 
@@ -110,10 +110,20 @@ Full API documentation is available via **Swagger UI** when running the server l
 
 ## 🤝 Related Projects
 
-*   **[The Wild Oasis - Admin Dashboard](https://github.com/yourusername/the-wild-oasis-admin)** - The React Admin interface (Vite)
-*   **[The Wild Oasis - Customer Website](https://github.com/yourusername/the-wild-oasis-website)** - The Next.js Guest facing website
+*   **[The Wild Oasis - Admin Dashboard](https://github.com/jatinshimpi/10-the-wild-oasis)** - The React Admin interface (Vite)
+*   **[The Wild Oasis - Customer Website](https://github.com/jatinshimpi/the-wild-oasis-website)** - The Next.js Guest facing website
 
 ---
 
 ## 🏷️ Keywords for Discovery
-*React Course, Jonas Schmedtmann, The Wild Oasis, Backend Migration, Supabase Alternative, Custom Backend, MERN Stack Project, Node.js Hotel API, MongoDB Booking System, Full Stack Portfolio.*
+*React Course, jonas schmedtmann, The Wild Oasis backend project, Backend Migration, Supabase Alternative, Custom Backend, MERN Stack Project, Node.js Hotel API, MongoDB Booking System, Full Stack Portfolio, the wild oasis backend project.*
+
+---
+
+## 🤝 Contributions
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/jatinshimpi/the-wild-oasis-backend/issues).
+
+---
+
+<p align="center">Made with ❤️ by <a href="https://github.com/jatinshimpi">Jatin Shimpi</a></p>
