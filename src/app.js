@@ -11,29 +11,7 @@ import { swaggerSpecs } from "./swagger.js";
 
 const app = express();
 
-// Security HTTP Headers
-app.use(helmet());
-
-// Development logging
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
-
-// Rate limiting
-const limiter = rateLimit({
-  max: 100, // Limit each IP to 100 requests per windowMs
-  windowMs: 60 * 60 * 1000, // 1 hour
-  message: "Too many requests from this IP, please try again in an hour!",
-});
-app.use("/api", limiter);
-
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
-
-// API Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
-
-// CORS configuration for both frontends
+// CORS configuration for both frontends (MUST be before helmet/rate-limiter)
 app.use(
   cors({
     origin: [
@@ -45,6 +23,28 @@ app.use(
     credentials: true,
   })
 );
+
+// Security HTTP Headers
+app.use(helmet());
+
+// Development logging
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
+
+// Rate limiting
+const limiter = rateLimit({
+  max: process.env.NODE_ENV === "development" ? 1000 : 100,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  message: "Too many requests from this IP, please try again in an hour!",
+});
+app.use("/api", limiter);
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
